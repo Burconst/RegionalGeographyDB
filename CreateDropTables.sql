@@ -3,7 +3,7 @@
 -- USE Regional_geography_db;
 
 ------------------------------------------------------
---Создание таблиц и PK
+--Создание таблиц и PK, FK
 ------------------------------------------------------
 CREATE TABLE Continent (
 	Continent_ID INT IDENTITY NOT NULL,
@@ -18,7 +18,8 @@ CREATE TABLE Country (
 	State_Languages VARCHAR(50) NOT NULL,
 	Total_Area INT NOT NULL,
 	Population_Size INT NOT NULL,
-	CONSTRAINT Country_PK PRIMARY KEY (Country_ID)
+	CONSTRAINT Country_PK PRIMARY KEY (Country_ID),
+	FOREIGN KEY (Continent_ID)  REFERENCES Continent (Continent_ID)
 )
 
 CREATE TABLE City (
@@ -26,7 +27,8 @@ CREATE TABLE City (
 	City_ID INT IDENTITY NOT NULL,
 	Name VARCHAR(100) NOT NULL,
 	Population_Size INT NOT NULL,
-	CONSTRAINT City_PK PRIMARY KEY (City_ID)
+	CONSTRAINT City_PK PRIMARY KEY (City_ID),
+	FOREIGN KEY (Country_ID)  REFERENCES Country (Country_ID)
 )
 
 CREATE TABLE City_sight (
@@ -36,7 +38,9 @@ CREATE TABLE City_sight (
 	OpeningHours VARCHAR(100) NOT NULL,
 	CitySightType_ID INT NOT NULL,
 	Address VARCHAR(200)
-	CONSTRAINT City_Sight_PK PRIMARY KEY (City_Sight_ID)
+	CONSTRAINT City_Sight_PK PRIMARY KEY (City_Sight_ID),
+	FOREIGN KEY (City_ID)  REFERENCES City (City_ID),
+	FOREIGN KEY (CitySightType_ID)  REFERENCES City_Sight_Type (CitySightType_ID)
 )
 
 CREATE TABLE Natural_Sight (
@@ -45,6 +49,9 @@ CREATE TABLE Natural_Sight (
 	SightType_ID INT NOT NULL,
 	IsUNESCO BIT NOT NULL,
 	Main_Characteristic_ID INT,
+	FOREIGN KEY (Nearest_City_ID)  REFERENCES City (Nearest_City_ID),
+	FOREIGN KEY (SightType_ID)  REFERENCES Natural_Sight_Type (SightType_ID),
+	FOREIGN KEY (Main_Characteristic_ID)  REFERENCES UniqueCharacteristic (Characteristic_ID)
 )
 
 CREATE TABLE Natural_Sight_Type (
@@ -56,7 +63,7 @@ CREATE TABLE Natural_Sight_Type (
 CREATE TABLE City_Sight_Type (
 	CitySightType_ID INT IDENTITY NOT NULL,
 	Name VARCHAR(100) NOT NULL,
-	CONSTRAINT CitySightType_PK PRIMARY KEY (CitySightType_ID)
+	CONSTRAINT CitySightType_PK PRIMARY KEY (CitySightType_ID),
 )
 
 CREATE TABLE UniqueCharacteristic (
@@ -66,10 +73,6 @@ CREATE TABLE UniqueCharacteristic (
 	CONSTRAINT Characteristic_PK PRIMARY KEY (Characteristic_ID)
 )
 --
-
-----------------------------------------------------------
--- Создание FK
-----------------------------------------------------------
 
 
 
