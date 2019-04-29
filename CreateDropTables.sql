@@ -34,8 +34,8 @@ CREATE TABLE City_sight (
 	Name VARCHAR(100) NOT NULL,
 	City_ID INT NOT NULL,
 	OpeningHours VARCHAR(100) NOT NULL,
-	CitySightType_ID INT NOT NULL
-
+	CitySightType_ID INT NOT NULL,
+	Address VARCHAR(200)
 	CONSTRAINT City_Sight_PK PRIMARY KEY (City_Sight_ID)
 )
 
@@ -47,7 +47,7 @@ CREATE TABLE Natural_Sight (
 	Main_Characteristic_ID INT,
 )
 
-CREATE TABLE Sight_Type (
+CREATE TABLE Natural_Sight_Type (
 	SightType_ID INT IDENTITY NOT NULL,
 	Name VARCHAR(100) NOT NULL,
 	CONSTRAINT SightType_PK PRIMARY KEY (SightType_ID)
