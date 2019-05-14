@@ -18,7 +18,7 @@ CREATE TABLE Country (
 	Total_Area INT NOT NULL,
 	Population_Size INT NOT NULL,
 	CONSTRAINT Country_PK PRIMARY KEY (Country_ID),
-	FOREIGN KEY (Continent_ID)  REFERENCES Continent (Continent_ID)
+	FOREIGN KEY (Continent_ID)  REFERENCES Continent (Continent_ID) ON DELETE CASCADE ON UPDATE CASCADE 
 )
 
 CREATE TABLE Language(
@@ -32,8 +32,8 @@ CREATE TABLE CountryLanguage(
 	Country_ID INT NOT NULL,
 	Language_ID INT NOT NULL,
 	CONSTRAINT CountryLanguage_PK PRIMARY KEY (ID),
-	FOREIGN KEY (Country_ID) REFERENCES Country (Country_ID),
-	FOREIGN KEY (Language_ID) REFERENCES Language (Language_ID)
+	FOREIGN KEY (Country_ID) REFERENCES Country (Country_ID) ON DELETE CASCADE,
+	FOREIGN KEY (Language_ID) REFERENCES Language (Language_ID) ON DELETE CASCADE
 )
 
 CREATE TABLE City (
@@ -42,7 +42,7 @@ CREATE TABLE City (
 	Name VARCHAR(100) NOT NULL,
 	Population_Size INT NOT NULL,
 	CONSTRAINT City_PK PRIMARY KEY (City_ID),
-	FOREIGN KEY (Country_ID)  REFERENCES Country (Country_ID)
+	FOREIGN KEY (Country_ID)  REFERENCES Country (Country_ID) ON DELETE CASCADE ON UPDATE CASCADE 
 )
 
 CREATE TABLE Sight_Type (
@@ -56,12 +56,13 @@ CREATE TABLE Sight (
 	Name VARCHAR(100) NOT NULL,
 	City_ID INT NOT NULL,
 	OpeningHours VARCHAR(100) NOT NULL,
-	SightType_ID INT,--Не яяясно
+	SightType_ID INT,
 	Address VARCHAR(200) NOT NULL,
-	Description VARCHAR(200),
+	IsUNESCO BIT,
+	Description VARCHAR(1000),
 	CONSTRAINT Sight_PK PRIMARY KEY (Sight_ID),
-	FOREIGN KEY (City_ID)  REFERENCES City (City_ID),
-	FOREIGN KEY (SightType_ID)  REFERENCES Sight_Type (SightType_ID)
+	FOREIGN KEY (City_ID)  REFERENCES City (City_ID) ON DELETE CASCADE ON UPDATE CASCADE, 
+	FOREIGN KEY (SightType_ID)  REFERENCES Sight_Type (SightType_ID) ON UPDATE CASCADE
 )
 
 --
@@ -148,31 +149,77 @@ END;
 GO
 CREATE PROCEDURE AddSightType
 	@Name VARCHAR(100)
-AS IF (SELECT COUNT(SightType_ID) FROM Sight_Type WHERE Name = @Name) = 0
+AS
+BEGIN 
+IF (SELECT COUNT(SightType_ID) FROM Sight_Type WHERE Name = @Name) = 0
 		INSERT INTO Sight_Type (Name) VALUES (@Name);
 	ELSE 
 		PRINT 'Уже содержится: '+@Name;
+END;
+
+GO
+CREATE PROCEDURE AddSight 
+	@Name VARCHAR(100),
+	@CityName VARCHAR(100),
+	@OpeningHours VARCHAR(100),
+	@SightType VARCHAR(100),
+	@Address VARCHAR(100),
+	@IsUNESCO BIT,
+	@Discription VARCHAR(1000)
+AS
+BEGIN
+	IF (SELECT COUNT(City_ID) FROM City WHERE Name = @CityName) = 0
+	BEGIN
+		PRINT 'Нет такого города: '+@CityName;
+		RETURN;
+	END;
+	IF (SELECT COUNT(SightType_ID) FROM Sight_Type WHERE Name = @SightType) = 0
+	BEGIN
+		PRINT 'Нет такого типа достопримечательности: '+@SightType;
+		RETURN;
+	END;
+	INSERT INTO Sight (Name, City_ID, OpeningHours, SightType_ID, Address, IsUNESCO, Description)
+	VALUES (@Name,
+			(SELECT City_ID FROM City WHERE Name = @CityName),
+			@OpeningHours,
+			(SELECT SightType_ID FROM Sight_Type WHERE Name = @SightType),
+			@Address,
+			@IsUNESCO,
+			@Discription);
+END;
 
 
 
 ----------------------------------------------------------
 -- Добавление данных с помощью процедур
 ----------------------------------------------------------
-
--- Добавление стран
+GO
 EXEC AddCountry 'Евразия', 'Россия', 17100000, 146781095
 
--- Добавление городов
-EXEC AddCity 'Россия', 'Москва', 11920000
-
--- Добавление языков 
 EXEC AddLanguage 'Русский язык'
 
---Язык - страна
 EXEC JoinCountryLanguage 'Россия','Русский язык'
 
---
+EXEC AddCity 'Россия', 'Москва', 11920000
+EXEC AddCity 'Россия','Санкт-Петербург', 5383968
+
 EXEC AddSightType 'Театр'
+EXEC AddSightType 'Музей'
+EXEC AddSightType 'Фонтан'
+EXEC AddSightType 'Гора'
+EXEC AddSightType 'Озеро'
+
+EXEC AddSight 'Мариинский театр', 'Санкт-Петербург', '11:00–19:00', 'Театр', 'Театральная пл., 1, Санкт-Петербург, 190000', 0, 'Театр оперы и балета в Санкт-Петербурге, один из ведущих музыкальных театров России и мира.'
+
+
+
+----------------------------------------------------------
+-- Представления
+----------------------------------------------------------
+
+
+--
+
 
 
 ----------------------------------------------------------
