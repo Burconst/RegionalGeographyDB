@@ -77,9 +77,16 @@ INSERT INTO Continent(Name) VALUES ('Северная Америка')
 INSERT INTO Continent(Name) VALUES ('Африка')
 
 --------------------------------------------------------------------------
--- Процедуры 
+-- Запросы для клиентской части 
 --------------------------------------------------------------------------
 
+
+
+
+
+--------------------------------------------------------------------------
+-- Процедуры 
+--------------------------------------------------------------------------
 
 
 GO
@@ -216,11 +223,44 @@ EXEC AddSight 'Мариинский театр', 'Санкт-Петербург'
 ----------------------------------------------------------
 -- Представления
 ----------------------------------------------------------
+GO
+CREATE VIEW CountryCitySight(Страна, Город, Достопримечательность)
+AS SELECT Country.Name, City.Name, Sight.Name FROM Country join City ON Country.Country_ID=City.Country_ID JOIN Sight ON City.City_ID = Sight.City_ID
+
+GO
+CREATE VIEW CountrySight(Страна, Достопримечательность)
+AS SELECT Country.Name, Sight.Name FROM Country join City ON Country.Country_ID=City.Country_ID JOIN Sight ON City.City_ID = Sight.City_ID
+
+GO
+CREATE VIEW SightTypeSights (Тип, Название)
+AS SELECT Sight_Type.Name, Sight.Name FROM Sight_Type JOIN Sight ON Sight.SightType_ID = Sight_Type.SightType_ID
+
+-- Вывод
+SELECT * FROM SightTypeSights
+SELECT * FROM CountryCitySight
+SELECT * FROM CountrySight
+
+----------------------------------------------------------
+-- Тригеры 
+----------------------------------------------------------
 
 
---
+----------------------------------------------------------
+-- 
+----------------------------------------------------------
 
 
+
+
+
+
+
+----------------------------------------------------------
+-- Удаление представлений
+----------------------------------------------------------
+DROP VIEW SightTypeSights;
+DROP VIEW CountryCitySight;
+DROP VIEW CountrySight;
 
 ----------------------------------------------------------
 -- Удаление таблиц
