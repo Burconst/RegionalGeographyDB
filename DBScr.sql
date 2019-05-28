@@ -1,7 +1,6 @@
--- CREATE DATABASE Regional_geography_db;
--- GO
--- USE Regional_geography_db;
-
+ CREATE DATABASE Regional_geography_db;
+ GO
+ USE Regional_geography_db;
 ------------------------------------------------------
 --Создание таблиц и PK, FK
 ------------------------------------------------------
@@ -10,7 +9,6 @@ CREATE TABLE Continent (
 	Name VARCHAR(50) UNIQUE NOT NULL,
 	CONSTRAINT Continent_PK PRIMARY KEY(Continent_ID) 
 )
-
 CREATE TABLE Country (
 	Country_ID INT IDENTITY NOT NULL,
 	Continent_ID INT NOT NULL,
@@ -20,13 +18,11 @@ CREATE TABLE Country (
 	CONSTRAINT Country_PK PRIMARY KEY (Country_ID),
 	FOREIGN KEY (Continent_ID)  REFERENCES Continent (Continent_ID) ON DELETE CASCADE ON UPDATE CASCADE 
 )
-
 CREATE TABLE Language(
 	Language_ID  INT IDENTITY NOT NULL,
 	Name VARCHAR(50) NOT NULL,
 	CONSTRAINT Language_FK PRIMARY KEY (Language_ID)
 )
-
 CREATE TABLE CountryLanguage(
 	ID INT IDENTITY NOT NULL,
 	Country_ID INT NOT NULL,
@@ -35,7 +31,6 @@ CREATE TABLE CountryLanguage(
 	FOREIGN KEY (Country_ID) REFERENCES Country (Country_ID) ON DELETE CASCADE,
 	FOREIGN KEY (Language_ID) REFERENCES Language (Language_ID) ON DELETE CASCADE
 )
-
 CREATE TABLE City (
 	Country_ID INT NOT NULL,
 	City_ID INT IDENTITY NOT NULL,
@@ -44,13 +39,11 @@ CREATE TABLE City (
 	CONSTRAINT City_PK PRIMARY KEY (City_ID),
 	FOREIGN KEY (Country_ID)  REFERENCES Country (Country_ID) ON DELETE CASCADE ON UPDATE CASCADE 
 )
-
 CREATE TABLE Sight_Type (
 	SightType_ID INT IDENTITY NOT NULL,
 	Name VARCHAR(100) NOT NULL,
 	CONSTRAINT SightType_PK PRIMARY KEY (SightType_ID)
 )
-
 CREATE TABLE Sight (
 	Sight_ID INT IDENTITY NOT NULL,
 	Name VARCHAR(100) NOT NULL,
@@ -64,9 +57,9 @@ CREATE TABLE Sight (
 	FOREIGN KEY (City_ID)  REFERENCES City (City_ID) ON DELETE CASCADE ON UPDATE CASCADE, 
 	FOREIGN KEY (SightType_ID)  REFERENCES Sight_Type (SightType_ID) ON UPDATE CASCADE
 )
-
---
-
+--------------------------------------------------------------------------
+-- Заполнение таблиц 
+--------------------------------------------------------------------------
 INSERT INTO Continent(Name) VALUES ('Европа')
 INSERT INTO Continent(Name) VALUES ('Азия')
 INSERT INTO Continent(Name) VALUES ('Евразия')
@@ -75,20 +68,22 @@ INSERT INTO Continent(Name) VALUES ('Австралия')
 INSERT INTO Continent(Name) VALUES ('Южная Америка')
 INSERT INTO Continent(Name) VALUES ('Северная Америка')
 INSERT INTO Continent(Name) VALUES ('Африка')
-
 --------------------------------------------------------------------------
 -- Запросы для клиентской части 
 --------------------------------------------------------------------------
 
+-- Входят в юнеско
+SELECT * FROM  Sight WHERE Sight.IsUNESCO = 1
 
-
-
+-- Страны и языки 
+SELECT Country.Name AS Country, Language.Name AS Language FROM Country
+JOIN CountryLanguage ON Country.Country_ID = CountryLanguage.Country_ID
+JOIN Language ON CountryLanguage.Language_ID = Language.Language_ID 
+GROUP BY Country.Name, Language.Name
 
 --------------------------------------------------------------------------
 -- Процедуры 
 --------------------------------------------------------------------------
-
-
 GO
 CREATE PROCEDURE AddCountry 
 					@ContinentName VARCHAR(50),
@@ -107,8 +102,6 @@ BEGIN
 	ELSE
 		PRINT 'Нет такого континент: '+@ContinentName
 END;
-
-
 GO
 CREATE PROCEDURE AddCity
 	@CountryName VARCHAR(50),
@@ -125,8 +118,6 @@ BEGIN
 	ELSE 
 		PRINT 'Нет такой страны: '+@CountryName
 END;
-
-
 GO
 CREATE PROCEDURE AddLanguage
 	@Name VARCHAR(100)
@@ -134,8 +125,6 @@ AS IF (SELECT COUNT(Language_ID) FROM Language WHERE Name = @Name) = 0
 		INSERT INTO Language (Name) VALUES (@Name);
 	ELSE 
 		PRINT 'Уже содержится: '+@Name;
-
-
 GO
 CREATE PROCEDURE JoinCountryLanguage
 	@Country VARCHAR(100),
@@ -151,8 +140,6 @@ BEGIN
 	ELSE 
 		PRINT 'Страны нет в базе: '+@Country;
 END;
-
-
 GO
 CREATE PROCEDURE AddSightType
 	@Name VARCHAR(100)
@@ -163,7 +150,6 @@ IF (SELECT COUNT(SightType_ID) FROM Sight_Type WHERE Name = @Name) = 0
 	ELSE 
 		PRINT 'Уже содержится: '+@Name;
 END;
-
 GO
 CREATE PROCEDURE AddSight 
 	@Name VARCHAR(100),
@@ -194,74 +180,53 @@ BEGIN
 			@IsUNESCO,
 			@Discription);
 END;
-
-
-
 ----------------------------------------------------------
 -- Добавление данных с помощью процедур
 ----------------------------------------------------------
 GO
 EXEC AddCountry 'Евразия', 'Россия', 17100000, 146781095
-
 EXEC AddLanguage 'Русский язык'
-
 EXEC JoinCountryLanguage 'Россия','Русский язык'
-
 EXEC AddCity 'Россия', 'Москва', 11920000
 EXEC AddCity 'Россия','Санкт-Петербург', 5383968
-
 EXEC AddSightType 'Театр'
 EXEC AddSightType 'Музей'
 EXEC AddSightType 'Фонтан'
 EXEC AddSightType 'Гора'
 EXEC AddSightType 'Озеро'
-
 EXEC AddSight 'Мариинский театр', 'Санкт-Петербург', '11:00–19:00', 'Театр', 'Театральная пл., 1, Санкт-Петербург, 190000', 0, 'Театр оперы и балета в Санкт-Петербурге, один из ведущих музыкальных театров России и мира.'
-
-
-
 ----------------------------------------------------------
 -- Представления
 ----------------------------------------------------------
 GO
 CREATE VIEW CountryCitySight(Страна, Город, Достопримечательность)
 AS SELECT Country.Name, City.Name, Sight.Name FROM Country join City ON Country.Country_ID=City.Country_ID JOIN Sight ON City.City_ID = Sight.City_ID
-
 GO
 CREATE VIEW CountrySight(Страна, Достопримечательность)
 AS SELECT Country.Name, Sight.Name FROM Country join City ON Country.Country_ID=City.Country_ID JOIN Sight ON City.City_ID = Sight.City_ID
-
 GO
 CREATE VIEW SightTypeSights (Тип, Название)
 AS SELECT Sight_Type.Name, Sight.Name FROM Sight_Type JOIN Sight ON Sight.SightType_ID = Sight_Type.SightType_ID
-
 -- Вывод
 SELECT * FROM SightTypeSights
 SELECT * FROM CountryCitySight
 SELECT * FROM CountrySight
-
 ----------------------------------------------------------
 -- Тригеры 
 ----------------------------------------------------------
 
+-- Откат попытки изменить название континентов
 
-----------------------------------------------------------
--- 
-----------------------------------------------------------
+-- Изменение часов работы 
 
-
-
-
-
-
+-- изменение адреса
 
 ----------------------------------------------------------
 -- Удаление представлений
 ----------------------------------------------------------
-DROP VIEW SightTypeSights;
-DROP VIEW CountryCitySight;
-DROP VIEW CountrySight;
-
+--DROP VIEW SightTypeSights;
+--DROP VIEW CountryCitySight;
+--DROP VIEW CountrySight;
 ----------------------------------------------------------
 -- Удаление таблиц
 ----------------------------------------------------------
@@ -272,5 +237,4 @@ DROP VIEW CountrySight;
 --DROP TABLE City;
 --DROP TABLE Sight_Type;
 --DROP TABLE Sight;
-
 --
