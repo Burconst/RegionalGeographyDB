@@ -60,30 +60,123 @@ CREATE TABLE Sight (
 --------------------------------------------------------------------------
 -- Заполнение таблиц 
 --------------------------------------------------------------------------
-INSERT INTO Continent(Name) VALUES ('Европа')
-INSERT INTO Continent(Name) VALUES ('Азия')
-INSERT INTO Continent(Name) VALUES ('Евразия')
-INSERT INTO Continent(Name) VALUES ('Антарктида')
-INSERT INTO Continent(Name) VALUES ('Австралия')
-INSERT INTO Continent(Name) VALUES ('Южная Америка')
-INSERT INTO Continent(Name) VALUES ('Северная Америка')
-INSERT INTO Continent(Name) VALUES ('Африка')
+INSERT INTO Continent(Name) VALUES ('Europe')
+INSERT INTO Continent(Name) VALUES ('Asia')
+INSERT INTO Continent(Name) VALUES ('Eurasia')
+INSERT INTO Continent(Name) VALUES ('Antarctica')
+INSERT INTO Continent(Name) VALUES ('Australia')
+INSERT INTO Continent(Name) VALUES ('South America')
+INSERT INTO Continent(Name) VALUES ('North America')
+INSERT INTO Continent(Name) VALUES ('Africa')
+----------------------------------------------------------
+-- Добавление данных с помощью процедур
+----------------------------------------------------------
+-- Страны
+EXEC AddCountry 'Eurasia', 'Russia', 17100000, 146781095
+EXEC AddCountry 'Europe', 'France', 674685, 66991000
+EXEC AddCountry 'South America', 'Chile', 756950, 17789267
+-- Языки
+EXEC AddLanguage 'Russian'
+EXEC AddLanguage 'French' 
+EXEC AddLanguage 'Chilean'
+EXEC AddLanguage 'Spanish'
+-- Привязка языков к странам
+EXEC JoinCountryLanguage 'Russia','Russian'
+EXEC JoinCountryLanguage 'France','French'
+EXEC JoinCountryLanguage 'Chile','Spanish'
+EXEC JoinCountryLanguage 'Chile','Chilean' 
+-- Города
+EXEC AddCity 'France', 'Paris', 2190327
+EXEC AddCity 'France', 'Versailles', 85771
+EXEC AddCity 'France', 'Marne-la-Vallee', 291132
+EXEC AddCity 'Russia', 'Moscow', 11920000
+EXEC AddCity 'Russia', 'St. Petersburg', 5383968
+EXEC AddCity 'Russia', 'Irkutsk', 623869
+EXEC AddCity 'Russia', 'Novosibirsk', 1612833
+EXEC AddCity 'Russia', 'Kazan', 1243500
+EXEC AddCity 'Chile', 'Isla de Pascua', 7750
+EXEC AddCity 'Chile', 'Antofagasta', 388545
+EXEC AddCity 'Chile', 'Puerto Chacabuco', 1243
+-- Типы достопримечательностей
+EXEC AddSightType 'Theater'
+EXEC AddSightType 'Museum'
+EXEC AddSightType 'Fountain'
+EXEC AddSightType 'Mountain'
+EXEC AddSightType 'Lake'
+EXEC AddSightType 'Cathedral'
+EXEC AddSightType 'Amusement Park'
+EXEC AddSightType 'National Park'
+EXEC AddSightType 'Monument'
+-- Достопримечательности
+EXEC AddSight 'Mariinsky Theater', 'St. Petersburg', '11: 00–19: 00 ','Theater',' Theater Square, 1, St. Petersburg, 190000 ', 0,' Opera and Ballet Theater in St. Petersburg, one of the leading musical theaters in Russia and the world. '
+EXEC AddSight 'Baikal', 'Irkutsk', '24/7','Lake','Irkutsk region, 665921', 1,'Lake of tectonic origin, the deepest lake on the planet, the largest natural reservoir of fresh water.'
+EXEC AddSight 'Moscow Kremlin and Red Square', 'Moscow', '09: 30–18: 00', 'Museum', 'Red Square, Moscow, 109012', 1, 'The main historical symbol of the country and its most famous landmark, witnesses a number of major historical events.'
+EXEC AddSight 'Notre Dame de Paris', 'Paris', '08: 00–19: 00 ','Cathedral',' 6 Parvis Notre-Dame - Pl. Jean-Paul II, 75004 Paris, France ', 1,' Notre-Dame de Paris is a Catholic church, one of the symbols of the French capital. '
+EXEC AddSight 'Versailles','Versailles', '09: 00–17: 30', 'Museum', 'Place d Armes, 78000 Versailles, France', 0, 'Palace and park ensemble, the former residence of the French kings, now being a suburb of Paris; center of world-class tourism. '
+EXEC AddSight 'Disneyland', 'Marne-la-Vallee', '10: 00–20: 00 ','Amusement Park',' Boulevard de Parc, 77700 Coupvray, France ', 0,' The complex of amusement parks of the Walt Disney company ", The park area is about 1943 hectares, an average of 12.5 million people visit Disneyland Paris per year.'
+EXEC AddSight 'National Park Rapanui', 'Isla de Pascua', '24/7 ','National Park',' Easter Island, Valparaiso, Chile ', 1,' The island owes its glory to numerous stone sculptures of moai, the creation of which attributed to the ancient Rapanuyans (X — XVI centuries). '
+EXEC AddSight 'Pukara de Quitar', 'Antofagasta', '08: 00–19: 00 ','Monument',' San Pedro de Atacama, Antofagasta, Chile ', 0,' Pre-Columbian village and archaeological monument, the village is known its stone fortress, which dates from the XII century. '
+EXEC AddSight 'Laguna San Rafael', 'Puerto Chacabuco', '24/7 ','Lake',' Puerto Chacabuco, Puerto Aisen, Chile ', 0,' Arc-shaped coastal lake, glacier. '
 --------------------------------------------------------------------------
 -- Запросы для клиентской части 
 --------------------------------------------------------------------------
-
--- Входят в юнеско
-SELECT * FROM  Sight WHERE Sight.IsUNESCO = 1
-
--- Страны и языки 
-SELECT Country.Name AS Country, Language.Name AS Language FROM Country
-JOIN CountryLanguage ON Country.Country_ID = CountryLanguage.Country_ID
-JOIN Language ON CountryLanguage.Language_ID = Language.Language_ID 
-GROUP BY Country.Name, Language.Name
-
+ --(01) Города в которых есть достопр., которые входят в ЮНЕСКО
+SELECT City.Name FROM City WHERE City.City_ID IN (SELECT Sight.City_ID FROM  Sight WHERE Sight.IsUNESCO = 1)
+ --(02) Города по населению от ста тысяч до миллиона
+SELECT Name, Population_Size FROM City WHERE Population_Size BETWEEN 100000 AND 1000000
+ --(03) Топ 10 стран по площади
+SELECT TOP 10 Name, Total_Area FROM Country ORDER BY Total_Area DESC
+ --(04) Города миллионники и города с тремя или более достопр.
+SELECT City.Name FROM City WHERE Population_Size > 999999
+UNION 
+SELECT City.Name FROM City WHERE (SELECT Count(*) FROM Sight WHERE City.City_ID = Sight.City_ID)>=3
+ --(05) Страны с достопр. из ЮНЕСКО за исключением стран из Африки
+SELECT Country.Name FROM Country 
+	WHERE (SELECT Count(*) FROM Sight WHERE Sight.IsUNESCO = 1 AND Sight.City_ID IN (SELECT City_ID FROM City WHERE City.Country_ID = Country.Country_ID)) > 0
+EXCEPT
+SELECT Country.Name FROM Country WHERE (SELECT Continent.Name FROM Continent WHERE Continent.Continent_ID = Country.Continent_ID) = 'Africa'
+-- (06) Страны с французским языком и театрами
+SELECT Country.Name FROM Country 
+	JOIN CountryLanguage ON Country.Country_ID = CountryLanguage.Country_ID 
+	WHERE (SELECT Language.Name FROM Language
+	WHERE CountryLanguage.Language_ID = Language.Language_ID) = 'French'
+INTERSECT
+SELECT Country.Name FROM Country
+	JOIN City ON City.Country_ID = Country.Country_ID
+	WHERE (SELECT Count(*) FROM Sight
+	WHERE Sight.City_ID = City.City_ID AND Sight.SightType_ID = (SELECT SightType_ID FROM Sight_Type WHERE Sight_Type.Name = 'Theater'))>0
+-- (07) Города, в которых больше двух 
+SELECT City.Name AS Город, Sight.Name AS Достопримечаательность FROM City
+	LEFT JOIN Sight ON City.City_ID = Sight.City_ID
+	GROUP BY City.Name, Sight.Name HAVING Count(*) > 2
+ --(08) Города, в названии которых есть дефис
+SELECT * FROM City WHERE City.Name LIKE '%[-]%'
+-- (09) Таблица городов с их размером населения и общей суммой населения во всех городах, которые есть в базе, сгруппированных по странам
+SELECT Country.Name, City.Name, Sum(City.Population_Size) AS Размер_населения FROM Country, City
+Where City.Country_ID = Country.Country_ID
+GROUP BY Country.Name, City.Name WITH ROLLUP
+ --(10) Таблица достопр. одного из типов: озеро, водопад, река, океан
+SELECT * FROM Sight WHERE
+(SELECT Sight_Type.Name FROM Sight_Type WHERE Sight.SightType_ID = Sight_Type.SightType_ID) IN ('Lake', 'Waterfall', 'River', 'Ocean')
+-- (11) Список стран с населением большим, чем население любого города в России
+SELECT * FROM Country
+WHERE Country.Population_Size > ANY(SELECT Population_Size FROM City WHERE City.Country_ID = (SELECT Country.Country_ID FROM Country WHERE Country.Name = 'Russia'))
+ --(12) Список городов в которых нет достопр.
+SELECT * FROM City
+	WHERE NOT EXISTS(SELECT * FROM Sight WHERE Sight.City_ID = City.City_ID)
+-- Увеличение площади России на 27000 км^2
+UPDATE Country 
+SET Total_Area = Total_Area - 27000
+FROM (Select Country.Name FROM Country WHERE Country.Name = 'Russia') AS Rus
+-- Удаление соборов в Париже 
+DELETE Sight 
+WHERE Sight.SightType_ID = (SELECt Sight_Type.SightType_ID FROM Sight_Type WHERE Sight_Type.Name = 'Cathedral')
+		AND
+	  Sight.City_ID = (SELECT City.City_ID FROM City WHERE City.Name = 'Paris')
 --------------------------------------------------------------------------
 -- Процедуры 
 --------------------------------------------------------------------------
+-- Добавление страны
 GO
 CREATE PROCEDURE AddCountry 
 					@ContinentName VARCHAR(50),
@@ -98,10 +191,11 @@ BEGIN
 			INSERT INTO Country(Continent_ID, Name, Total_Area, Population_Size)
 			VALUES ((SELECT Continent_ID FROM Continent WHERE Name = @ContinentName), @Name, @Total_Area, @Population_Size)
 		ELSE 
-			PRINT 'Страна '+@Name+' уже существует'
+		PRINT 'Country' + @Name + 'already exists'
 	ELSE
-		PRINT 'Нет такого континент: '+@ContinentName
+		PRINT 'There is no such continent:'+@ContinentName
 END;
+-- Добавление города
 GO
 CREATE PROCEDURE AddCity
 	@CountryName VARCHAR(50),
@@ -114,17 +208,19 @@ BEGIN
 			INSERT INTO City(Country_ID, Name, Population_Size)
 			VALUES ((SELECT Country_ID FROM Country WHERE Name = @CountryName), @Name, @Population_Size)
 		ELSE
-			PRINT 'Город '+@Name+' уже существует'
+			PRINT 'City ' + @Name + ' already exists'
 	ELSE 
-		PRINT 'Нет такой страны: '+@CountryName
+		PRINT 'There is no such country:' + @CountryName
 END;
+-- Добавление языка
 GO
 CREATE PROCEDURE AddLanguage
 	@Name VARCHAR(100)
 AS IF (SELECT COUNT(Language_ID) FROM Language WHERE Name = @Name) = 0
 		INSERT INTO Language (Name) VALUES (@Name);
 	ELSE 
-		PRINT 'Уже содержится: '+@Name;
+		PRINT 'Already contained:' + @Name;
+-- Процедура для привязки языка к стране
 GO
 CREATE PROCEDURE JoinCountryLanguage
 	@Country VARCHAR(100),
@@ -136,10 +232,11 @@ BEGIN
 			INSERT INTO CountryLanguage(Country_ID,Language_ID) 
 			VAlUES ((SELECT Country_ID FROM Country WHERE Name = @Country),(SELECT Language_ID FROM Language WHERE Name = @Language));
 		ELSE
-			PRINT 'Языка нет в базе: '+@Language;
+			PRINT 'There is no language in the database:' + @Language;
 	ELSE 
-		PRINT 'Страны нет в базе: '+@Country;
+		PRINT 'Countries are not in the database:' + @Country;
 END;
+-- Добавление типа достопримечательности
 GO
 CREATE PROCEDURE AddSightType
 	@Name VARCHAR(100)
@@ -148,8 +245,9 @@ BEGIN
 IF (SELECT COUNT(SightType_ID) FROM Sight_Type WHERE Name = @Name) = 0
 		INSERT INTO Sight_Type (Name) VALUES (@Name);
 	ELSE 
-		PRINT 'Уже содержится: '+@Name;
+		PRINT 'Already contained:' + @Name;
 END;
+-- Добавление достопримечательности
 GO
 CREATE PROCEDURE AddSight 
 	@Name VARCHAR(100),
@@ -163,12 +261,17 @@ AS
 BEGIN
 	IF (SELECT COUNT(City_ID) FROM City WHERE Name = @CityName) = 0
 	BEGIN
-		PRINT 'Нет такого города: '+@CityName;
+		PRINT 'There is no such city:' + @CityName;
 		RETURN;
 	END;
 	IF (SELECT COUNT(SightType_ID) FROM Sight_Type WHERE Name = @SightType) = 0
 	BEGIN
-		PRINT 'Нет такого типа достопримечательности: '+@SightType;
+		PRINT 'There is no such type of attraction:' + @SightType;
+		RETURN;
+	END;
+	IF (SELECT COUNT(SightType_ID) FROM Sight WHERE Name = @Name) > 0
+	BEGIN
+		PRINT 'Already exists: ' + @Name;
 		RETURN;
 	END;
 	INSERT INTO Sight (Name, City_ID, OpeningHours, SightType_ID, Address, IsUNESCO, Description)
@@ -180,61 +283,181 @@ BEGIN
 			@IsUNESCO,
 			@Discription);
 END;
-----------------------------------------------------------
--- Добавление данных с помощью процедур
-----------------------------------------------------------
+-- Вывод достопр. данного города
 GO
-EXEC AddCountry 'Евразия', 'Россия', 17100000, 146781095
-EXEC AddLanguage 'Русский язык'
-EXEC JoinCountryLanguage 'Россия','Русский язык'
-EXEC AddCity 'Россия', 'Москва', 11920000
-EXEC AddCity 'Россия','Санкт-Петербург', 5383968
-EXEC AddSightType 'Театр'
-EXEC AddSightType 'Музей'
-EXEC AddSightType 'Фонтан'
-EXEC AddSightType 'Гора'
-EXEC AddSightType 'Озеро'
-EXEC AddSight 'Мариинский театр', 'Санкт-Петербург', '11:00–19:00', 'Театр', 'Театральная пл., 1, Санкт-Петербург, 190000', 0, 'Театр оперы и балета в Санкт-Петербурге, один из ведущих музыкальных театров России и мира.'
+CREATE PROCEDURE ShowSightsOf @CityName VARCHAR(100)
+AS 
+BEGIN
+	IF (SELECT COUNT(City_ID) FROM City WHERE Name = @CityName) = 0
+	BEGIN
+		PRINT 'There is no such city:' + @CityName;
+		RETURN;
+	END;
+	SELECT Sight.Name FROM Sight WHERE Sight.City_ID = (SELECT City_ID FROM City Where City.Name = @CityName)
+END;
+-- Проверка того, содержится ли в данном городе достопр. данного типа
+GO
+CREATE FUNCTION SightTypeContainedIn (@SyghtType VARCHAR(100), @CityName VARCHAR(100)) 
+RETURNS BIT 
+AS 
+BEGIN
+	IF ((SELECT Count(SightType_ID) FROM Sight WHERE Sight.City_ID = (SELECT City_ID FROM City Where City.Name = 'Irkutsk') AND SightType_ID = (SELECT SightType_ID FROM Sight_Type Where Sight_Type.Name = 'Lae')) = 0)
+		RETURN 0;
+	RETURN 1
+END;
+
+-- Удаление процедур и функций
+--DROP PROCEDURE AddCountry;
+--DROP PROCEDURE AddCity;
+--DROP PROCEDURE AddLanguage;
+--DROP PROCEDURE JoinCountryLanguage;
+--DROP PROCEDURE AddSightType;
+--DROP PROCEDURE AddSight;
+--DROP PROCEDURE ShowSightsOf;
+--DROP FUNCTION SightTypeContainedIn;
 ----------------------------------------------------------
 -- Представления
 ----------------------------------------------------------
+ --Вывод достопр. сгруппированных по стране и городу
 GO
-CREATE VIEW CountryCitySight(Страна, Город, Достопримечательность)
-AS SELECT Country.Name, City.Name, Sight.Name FROM Country join City ON Country.Country_ID=City.Country_ID JOIN Sight ON City.City_ID = Sight.City_ID
+CREATE VIEW CountryCitySightVIEW(Страна, Город, Достопримечательность)
+AS SELECT Country.Name, City.Name, Sight.Name FROM Country 
+JOIN City ON Country.Country_ID=City.Country_ID
+JOIN Sight ON City.City_ID = Sight.City_ID;
+  --Вывод всех допстопр. сгруппированных по типу
 GO
-CREATE VIEW CountrySight(Страна, Достопримечательность)
-AS SELECT Country.Name, Sight.Name FROM Country join City ON Country.Country_ID=City.Country_ID JOIN Sight ON City.City_ID = Sight.City_ID
+CREATE VIEW SightTypeSightsVIEW (Тип, Название)
+AS SELECT Sight_Type.Name, Sight.Name FROM Sight_Type
+JOIN Sight ON Sight.SightType_ID = Sight_Type.SightType_ID
+GROUP BY Sight_Type.Name, Sight.Name;
+ --Вывод стран и языков в них используемых
 GO
-CREATE VIEW SightTypeSights (Тип, Название)
-AS SELECT Sight_Type.Name, Sight.Name FROM Sight_Type JOIN Sight ON Sight.SightType_ID = Sight_Type.SightType_ID
--- Вывод
-SELECT * FROM SightTypeSights
-SELECT * FROM CountryCitySight
-SELECT * FROM CountrySight
+CREATE VIEW CountryLanguageVIEW (Страна, Язык)
+AS SELECT Country.Name AS Country, Language.Name AS Language FROM Country
+JOIN CountryLanguage ON Country.Country_ID = CountryLanguage.Country_ID
+JOIN Language ON CountryLanguage.Language_ID = Language.Language_ID 
+GROUP BY Country.Name, Language.Name;
+-- Вывод представлений
+--SELECT * FROM SightTypeSightsVIEW
+--SELECT * FROM CountrySightVIEW
+--SELECT * FROM CountryLanguageVIEW
+-- Удаление
+--DROP VIEW CountryCitySightVIEW;
+--DROP VIEW SightTypeSightsVIEW;
+--DROP VIEW CountryLanguageVIEW;
 ----------------------------------------------------------
 -- Тригеры 
 ----------------------------------------------------------
+-- Попытка добавить в таблицу материков
+GO
+CREATE TRIGGER Tr_Continent_INSERT
+ON Continent
+INSTEAD OF INSERT
+AS
+ PRINT 'Sorry, you can not insert continent';
 
--- Откат попытки изменить название континентов
+-- Попытка удалить в таблице материков
+GO
+CREATE TRIGGER Tr_Continent_DELETE 
+ON Continent
+INSTEAD OF DELETE 
+AS
+ PRINT 'Sorry, you can not delete continent';
 
--- Изменение часов работы 
+-- Попытка изменить что-то в таблице материков
+GO
+CREATE TRIGGER Tr_Continent_UPDATE
+ON Continent
+INSTEAD OF UPDATE
+AS
+ PRINT 'Sorry, you can not update continent';
 
--- изменение адреса
+ -- При изменении размера насееления города соответствующее изменение населения, в которой находится этот город 
+GO
+CREATE TRIGGER Tr_CityPopulationSize_Update
+ON City
+AFTER UPDATE
+AS 
+BEGIN
+	UPDATE Country
+		SET Population_Size = Population_Size + Da.DELTA
+		FROM(SELECT INSERTED.Population_Size-DELETED.Population_Size AS DELTA, DELETED.Country_ID AS Countr FROM DELETED JOIN INSERTED ON DELETED.City_ID = INSERTED.City_ID) AS Da
+		WHERE Country.Country_ID = Countr
+END;
+-- Запрет на изменение имени страны, в которой 5 и более городов
+GO
+CREATE TRIGGER Tr_CountryName_Update
+ON Country
+AFTER UPDATE
+AS
+BEGIN 
+	UPDATE Country
+		SET Name=OldName
+		FROM(SELECT DELETED.Name AS OldName, deleted.Country_ID FROM DELETED) AS DelData
+		WHERE DelData.Country_ID = Country.Country_ID 
+		 AND
+		(SELECT COUNT(*) FROM City WHERE City.Country_ID = Country.Country_ID)>=5
+END;
 
+-- Проверка работы 
+
+SELECT * FROM Continent
+-- Tr_Continent_INSERT
+INSERT INTO Continent(Name) VALUES ('Continent')
+
+-- Tr_Continent_DELETE
+DELETE Continent WHERE Name = 'Africa'
+
+-- Tr_Continent_UPDATE
+UPDATE Continent	SET Name=''
+
+-- Tr_CityPopulationSize_Update
+-- начальное состояние
+SELECT Country.Name, Country.Population_Size FROM Country
+-- изменение
+UPDATE City
+	SET Population_Size = Population_Size + 100000
+SELECT Country.Name, Country.Population_Size FROM Country
+-- откат
+UPDATE City
+	SET Population_Size = Population_Size - 100000
+SELECT Country.Name, Country.Population_Size FROM Country
+
+-- Tr_CountryName_Update
+UPDATE Country
+	SET Name = 'Rusia'
+	WHERE Country.Name = 'Russia'
+SELECT Country.Name FROM Country
+
+ -- Удаление 
+--DROP TRIGGER Tr_Continent_INSERT
+--DROP TRIGGER Tr_Continent_DELETE
+--DROP TRIGGER Tr_Continent_UPDATE
+--DROP TRIGGER Tr_CityPopulationSize_Update
+--DROP TRIGGER Tr_CountryName_Update;
 ----------------------------------------------------------
--- Удаление представлений
+-- Индексы
 ----------------------------------------------------------
---DROP VIEW SightTypeSights;
---DROP VIEW CountryCitySight;
---DROP VIEW CountrySight;
+CREATE INDEX index_coutry ON Country (Name)
+CREATE INDEX index_language ON Language (Name)
+CREATE INDEX index_city ON City (Name)
+----------------------------------------------------------
+-- Удаление процедур
+----------------------------------------------------------
+--DROP PROCEDURE AddCountry;
+--DROP PROCEDURE AddCity;
+--DROP PROCEDURE AddLanguage;
+--DROP PROCEDURE JoinCountryLanguage;
+--DROP PROCEDURE AddSightType;
+--DROP PROCEDURE AddSight;
+--DROP PROCEDURE SowSightsOf;
 ----------------------------------------------------------
 -- Удаление таблиц
 ----------------------------------------------------------
---DROP TABLE Continent;
---DROP TABLE Language;
---DROP TABLE CountryLanguage;
---DROP TABLE Country;
---DROP TABLE City;
---DROP TABLE Sight_Type;
 --DROP TABLE Sight;
---
+--DROP TABLE Sight_Type;
+--DROP TABLE CountryLanguage;
+--DROP TABLE Language;
+--DROP TABLE City;
+--DROP TABLE Country;
+--DROP TABLE Continent;
